@@ -1,2 +1,2 @@
 # messaging-protocol
-This is messaging system that enables micro services communication or messaging
+This is a messaging system that enables micro services communication or messaging
