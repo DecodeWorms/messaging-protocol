@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - staging
+  pull_request:
+    branches:
+      - staging
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set up Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: ^1.15
+
+      - name: Install golint
+        run: go get -u golang.org/x/lint/golint
+
+      - name: Run tests and linter
+        run: |
+          go vet ./...
+          golint ./...
+
+      - name: Build
+        run: go build -v ./...
