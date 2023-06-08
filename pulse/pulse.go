@@ -4,9 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math/rand"
+
 	store "github.com/DecodeWorms/messaging-protocol"
 	"github.com/apache/pulsar-client-go/pulsar"
-	"math/rand"
 )
 
 type EventStore struct {
@@ -91,10 +92,8 @@ func (e *EventStore) Subscribe(topic string, subscription string, messageHandler
 		}
 
 		messageHandler(msg)
-
-		consumer.Ack(msg)
+		//consumer.Ack(msg)
 	}
-	return nil
 }
 
 func (e *EventStore) Run() error {
