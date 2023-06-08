@@ -3,7 +3,6 @@ package pulse
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"math/rand"
 
 	store "github.com/DecodeWorms/messaging-protocol"
@@ -15,24 +14,24 @@ type EventStore struct {
 	//add logger
 }
 
-func Init(c pulsar.Client, opt store.Options) (store.PulsarStore, error) {
+func Init(opt store.Options) (store.PulsarStore, error) {
 	opts := pulsar.ClientOptions{
 		URL: opt.Address,
 	}
 	opts.TLSAllowInsecureConnection = true
-	c, err := pulsar.NewClient(opts)
+	cli, err := pulsar.NewClient(opts)
 	if err != nil {
 		return nil, err
 	}
 	return &EventStore{
-		client: c,
+		client: cli,
 	}, nil
 }
 
 func (e *EventStore) Publish(topic string, message []byte) error {
 	opts := pulsar.ProducerOptions{
 		Topic:                   topic,
-		Name:                    fmt.Sprintf("%s", generateRandomName()),
+		Name:                    generateRandomName(),
 		DisableBlockIfQueueFull: true,
 		SendTimeout:             0,
 	}
@@ -54,7 +53,7 @@ func (e *EventStore) Publish(topic string, message []byte) error {
 func (e *EventStore) PublishRaw(topic string, message interface{}) error {
 	opts := pulsar.ProducerOptions{
 		Topic:                   topic,
-		Name:                    fmt.Sprintf("%s", generateRandomName()),
+		Name:                    generateRandomName(),
 		DisableBlockIfQueueFull: true,
 		SendTimeout:             0,
 	}
