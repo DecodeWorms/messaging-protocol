@@ -3,6 +3,7 @@ package pulse
 import (
 	"context"
 	"encoding/json"
+	"log"
 	"math/rand"
 
 	store "github.com/DecodeWorms/messaging-protocol"
@@ -15,6 +16,7 @@ type EventStore struct {
 }
 
 func Init(opt store.Options) (store.PulsarStore, error) {
+	log.Println("Starting the event store")
 	opts := pulsar.ClientOptions{
 		URL: opt.Address,
 	}
@@ -23,6 +25,7 @@ func Init(opt store.Options) (store.PulsarStore, error) {
 	if err != nil {
 		return nil, err
 	}
+	log.Println("Event store is ready ..")
 	return &EventStore{
 		client: cli,
 	}, nil
