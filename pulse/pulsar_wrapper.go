@@ -7,11 +7,11 @@ import (
 	"github.com/apache/pulsar-client-go/pulsar"
 )
 
-type message struct {
+type Message struct {
 	client pulsar.Client
 }
 
-func NewMessage(pulsarUrl string) (*message, error) {
+func NewMessage(pulsarUrl string) (*Message, error) {
 	client, err := pulsar.NewClient(pulsar.ClientOptions{
 		URL: pulsarUrl,
 	})
@@ -20,13 +20,13 @@ func NewMessage(pulsarUrl string) (*message, error) {
 	}
 	defer client.Close()
 
-	return &message{
+	return &Message{
 		client: client,
 	}, nil
 
 }
 
-func (m message) Publisher(message, topic string) error {
+func (m Message) Publisher(message, topic string) error {
 	pro, err := m.client.CreateProducer(pulsar.ProducerOptions{
 		Topic: topic,
 	})
@@ -45,7 +45,7 @@ func (m message) Publisher(message, topic string) error {
 	return nil
 }
 
-func (m message) Subscriber(topic string) string {
+func (m Message) Subscriber(topic string) string {
 	cons, err := m.client.Subscribe(pulsar.ConsumerOptions{
 		Topic:            topic,
 		Type:             pulsar.Exclusive,
