@@ -2,6 +2,7 @@ package pulse
 
 import (
 	"context"
+	"encoding/json"
 	"log"
 
 	"github.com/apache/pulsar-client-go/pulsar"
@@ -26,7 +27,7 @@ func NewMessage(pulsarUrl string) (*Message, error) {
 
 }
 
-func (m Message) Publisher(message, topic string) error {
+func (m Message) Publisher(message interface{}, topic string) error {
 	pro, err := m.client.CreateProducer(pulsar.ProducerOptions{
 		Topic: topic,
 	})
@@ -35,8 +36,14 @@ func (m Message) Publisher(message, topic string) error {
 	}
 	defer pro.Close()
 
+	// Convert the type interface to JSON
+	byteRes, err := json.Marshal(message)
+	if err != nil {
+		return err
+	}
+
 	msg := pulsar.ProducerMessage{
-		Payload: []byte(message),
+		Payload: byteRes,
 	}
 	_, err = pro.Send(context.Background(), &msg)
 	if err != nil {
