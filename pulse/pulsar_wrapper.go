@@ -19,7 +19,6 @@ func NewMessage(pulsarUrl string) (*Message, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer client.Close()
 
 	return &Message{
 		client: client,
@@ -52,15 +51,14 @@ func (m Message) Publisher(message interface{}, topic string) error {
 	return nil
 }
 
-func (m Message) Subscriber(topic string) string {
+func (m Message) Subscriber(topic string) ([]byte, error) {
 	cons, err := m.client.Subscribe(pulsar.ConsumerOptions{
 		Topic:            topic,
 		Type:             pulsar.Exclusive,
 		SubscriptionName: "my-sub-name",
 	})
 	if err != nil {
-		log.Println(err)
-		return ""
+		return nil, err
 	}
 	defer cons.Close()
 
@@ -68,8 +66,7 @@ func (m Message) Subscriber(topic string) string {
 	if err != nil {
 		log.Fatal(err)
 	}
-
 	cons.Ack(msg)
-	return string(msg.Payload())
 
+	return msg.Payload(), nil
 }
