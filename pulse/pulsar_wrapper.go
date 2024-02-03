@@ -51,6 +51,27 @@ func (m Message) Publisher(message interface{}, topic string) error {
 	return nil
 }
 
+/*func (m Message) Subscriber(topic string) ([]byte, error) {
+cons, err := m.client.Subscribe(pulsar.ConsumerOptions{
+	Topic:            topic,
+	Type:             pulsar.Exclusive,
+	SubscriptionName: "my-sub-name",
+})
+if err != nil {
+	return nil, err
+}
+defer cons.Close()
+
+msg, err := cons.Receive(context.Background())
+if err != nil {
+	log.Fatal(err)
+}
+/* trunk-ignore(golangci-lint/errcheck) */
+//cons.Ack(msg)
+
+//return msg.Payload(), nil
+//}
+
 func (m Message) Subscriber(topic string) ([]byte, error) {
 	cons, err := m.client.Subscribe(pulsar.ConsumerOptions{
 		Topic:            topic,
@@ -62,11 +83,22 @@ func (m Message) Subscriber(topic string) ([]byte, error) {
 	}
 	defer cons.Close()
 
-	msg, err := cons.Receive(context.Background())
-	if err != nil {
-		log.Fatal(err)
-	}
-	cons.Ack(msg)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
-	return msg.Payload(), nil
+	for {
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		default:
+			msg, err := cons.Receive(ctx)
+			if err != nil {
+				log.Printf("Error receiving message: %v", err)
+				continue
+			}
+
+			cons.Ack(msg)
+			return msg.Payload(), nil
+		}
+	}
 }
