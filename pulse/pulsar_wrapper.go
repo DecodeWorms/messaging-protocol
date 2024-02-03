@@ -87,19 +87,16 @@ func (m Message) Subscriber(topic string) ([]byte, error) {
 	defer cancel()
 
 	for {
-		select {
-		case <-ctx.Done():
-			return nil, ctx.Err()
-		default:
-			msg, err := cons.Receive(ctx)
-			if err != nil {
-				log.Printf("Error receiving message: %v", err)
-				continue
+		msg, err := cons.Receive(ctx)
+		if err != nil {
+			if err == context.Canceled {
+				return nil, ctx.Err()
 			}
-
-			/* trunk-ignore(golangci-lint/errcheck) */
-			cons.Ack(msg)
-			return msg.Payload(), nil
+			log.Printf("Error receiving message: %v", err)
+			continue
 		}
+
+		cons.Ack(msg)
+		return msg.Payload(), nil
 	}
 }
