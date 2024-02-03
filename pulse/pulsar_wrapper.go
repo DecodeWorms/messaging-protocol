@@ -96,6 +96,7 @@ func (m Message) Subscriber(topic string) ([]byte, error) {
 			continue
 		}
 
+		/* trunk-ignore(golangci-lint/errcheck) */
 		cons.Ack(msg)
 		return msg.Payload(), nil
 	}
