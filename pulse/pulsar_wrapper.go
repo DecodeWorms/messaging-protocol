@@ -3,31 +3,50 @@ package pulse
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
+	"math/rand"
+	"time"
 
+	messagingprotocol "github.com/DecodeWorms/messaging-protocol"
 	"github.com/apache/pulsar-client-go/pulsar"
 )
 
 type Message struct {
 	client pulsar.Client
+	/* trunk-ignore(golangci-lint/unused) */
+	opt         messagingprotocol.Options
+	serviceName string
 }
 
-func NewMessage(pulsarUrl string) (*Message, error) {
+func NewMessage(opt messagingprotocol.Options) (*Message, error) {
+	addr := opt.Address
+	if addr == "" {
+		return nil, fmt.Errorf("empty pulsar url")
+	}
+	serviceName := opt.ServiceName
+	if serviceName == "" {
+		return nil, fmt.Errorf("empty service name")
+	}
+
 	client, err := pulsar.NewClient(pulsar.ClientOptions{
-		URL: pulsarUrl,
+		URL:                        addr,
+		TLSAllowInsecureConnection: true,
 	})
 	if err != nil {
 		return nil, err
 	}
 
 	return &Message{
-		client: client,
+		client:      client,
+		serviceName: serviceName,
 	}, nil
 
 }
 
 func (m Message) Publisher(message interface{}, topic string) error {
 	pro, err := m.client.CreateProducer(pulsar.ProducerOptions{
+		Name:  generateRandomName(),
 		Topic: topic,
 	})
 	if err != nil {
@@ -42,7 +61,8 @@ func (m Message) Publisher(message interface{}, topic string) error {
 	}
 
 	msg := pulsar.ProducerMessage{
-		Payload: byteRes,
+		Payload:   byteRes,
+		EventTime: time.Now(),
 	}
 	_, err = pro.Send(context.Background(), &msg)
 	if err != nil {
@@ -51,31 +71,11 @@ func (m Message) Publisher(message interface{}, topic string) error {
 	return nil
 }
 
-/*func (m Message) Subscriber(topic string) ([]byte, error) {
-cons, err := m.client.Subscribe(pulsar.ConsumerOptions{
-	Topic:            topic,
-	Type:             pulsar.Exclusive,
-	SubscriptionName: "my-sub-name",
-})
-if err != nil {
-	return nil, err
-}
-defer cons.Close()
-
-msg, err := cons.Receive(context.Background())
-if err != nil {
-	log.Fatal(err)
-}
-/* trunk-ignore(golangci-lint/errcheck) */
-//cons.Ack(msg)
-
-//return msg.Payload(), nil
-//}
-
 func (m Message) Subscriber(topic string) ([]byte, error) {
 	cons, err := m.client.Subscribe(pulsar.ConsumerOptions{
-		Topic:            topic,
-		Type:             pulsar.Exclusive,
+		Topic: topic,
+		Type:  pulsar.Exclusive,
+		// Remove the hard coded part
 		SubscriptionName: "my-sub-name",
 	})
 	if err != nil {
@@ -95,9 +95,17 @@ func (m Message) Subscriber(topic string) ([]byte, error) {
 			log.Printf("Error receiving message: %v", err)
 			continue
 		}
-
 		/* trunk-ignore(golangci-lint/errcheck) */
 		cons.Ack(msg)
 		return msg.Payload(), nil
 	}
+}
+
+func generateRandomName() string {
+	chars := "abcdefghijklmnopqrstuvwxyz"
+	bytes := make([]byte, 10)
+	for i := range bytes {
+		bytes[i] = chars[rand.Intn(len(chars))]
+	}
+	return string(bytes)
 }
